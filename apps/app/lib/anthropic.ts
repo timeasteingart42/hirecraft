@@ -19,15 +19,11 @@ export async function callAI({
     model: MODEL,
     max_tokens: maxTokens,
     system,
-    messages: [
-      { role: "user", content: user },
-      { role: "assistant", content: "{" },
-    ],
+    messages: [{ role: "user", content: user }],
   });
 
-  const raw =
+  const text =
     response.content[0].type === "text" ? response.content[0].text : "";
-  const text = "{" + raw;
 
   return {
     text,
