@@ -38,11 +38,14 @@ export async function POST(req: NextRequest) {
 
   let insights: any;
   try {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    insights = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+    const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*$/g, "").trim();
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    const jsonStr = start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned;
+    insights = JSON.parse(jsonStr);
   } catch (e) {
     return NextResponse.json(
-      { error: "AI returned invalid JSON", raw: text },
+      { error: "AI returned invalid JSON", raw: text.slice(0, 500) },
       { status: 502 }
     );
   }
