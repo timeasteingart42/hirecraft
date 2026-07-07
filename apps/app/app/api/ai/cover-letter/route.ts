@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/get-or-create-user";
 import { COVER_LETTER_SYSTEM_PROMPT } from "@/lib/prompts/cover-letter";
 
+export const maxDuration = 60;
+
 const BodySchema = z.object({
   applicationId: z.string(),
   tone: z

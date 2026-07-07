@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/get-or-create-user";
 import { MATCH_INSIGHTS_SYSTEM_PROMPT } from "@/lib/prompts/match-insights";
 
+export const maxDuration = 60;
+
 const BodySchema = z.object({
   jobPostingText: z.string().min(50, "Job posting is too short"),
   applicationId: z.string().optional(),
