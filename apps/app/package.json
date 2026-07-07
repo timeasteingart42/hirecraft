@@ -1,17 +1,17 @@
 {
-  "name": "@hirecraft/app",
+  "name": "hirecraft-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start -p 3001",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.0",
     "@clerk/nextjs": "^5.0.0",
-    "@hirecraft/db": "workspace:*",
     "@prisma/client": "^5.10.0",
     "next": "14.2.5",
     "react": "^18.3.1",
@@ -24,6 +24,7 @@
     "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
+    "prisma": "^5.10.0",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5"
   }
