@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  clerkId            String   @unique
+  displayName        String?
+  country            String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  resumeBaseline     ResumeBaseline?
+  applications       Application[]
+  documents          Document[]
+  usageEvents        UsageEvent[]
+}
+
+model ResumeBaseline {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content       Json
+  rawText       String   @db.Text
+  fileName      String?
+  uploadedAt    DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tier          String?
+  tierScore     Int?
+  toneDefault   String?  @default("warm-professional")
+}
+
+model Application {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  roleTitle         String
+  organization      String
+  location          String?
+  jobPostingUrl     String?
+  jobPostingText    String   @db.Text
+  applicationDeadline DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  status            String   @default("draft")
+  statusHistory     Json     @default("[]")
+
+  matchTier         String?
+  matchScore        Int?
+  matchInsights     Json?
+
+  documents         Document[]
+
+  notes             String?  @db.Text
+  nextAction        String?
+
+  @@index([userId, status])
+}
+
+model Document {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId String?
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  type          String
+  content       String       @db.Text
+  tier          String?
+  tierScore     Int?
+  metadata      Json?
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([applicationId])
+  @@index([type])
+}
+
+model UsageEvent {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventType     String
+  moduleName    String?
+  tokensUsed    Int?
+  costCents     Int?
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+}

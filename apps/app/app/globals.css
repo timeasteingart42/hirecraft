@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body { background: theme("colors.paper"); color: theme("colors.ink"); }
+}
+
+@layer components {
+  .chip { @apply inline-block px-3 py-1 rounded-full text-xs font-medium; }
+  .chip-strong { @apply chip bg-green-50 text-status-strong border border-green-200; }
+  .chip-fit { @apply chip bg-blue-50 text-status-fit border border-blue-200; }
+  .chip-reach { @apply chip bg-orange-50 text-status-reach border border-orange-200; }
+  .chip-skip { @apply chip bg-red-50 text-status-skip border border-red-200; }
+}

@@ -1,0 +1,74 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { callAI } from "@/lib/anthropic";
+import { db } from "@/lib/db";
+import { getOrCreateUser } from "@/lib/get-or-create-user";
+import { MATCH_INSIGHTS_SYSTEM_PROMPT } from "@/lib/prompts/match-insights";
+
+const BodySchema = z.object({
+  jobPostingText: z.string().min(50, "Job posting is too short"),
+  applicationId: z.string().optional(),
+});
+
+export async function POST(req: NextRequest) {
+  const user = await getOrCreateUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = BodySchema.safeParse(await req.json());
+  if (!body.success) {
+    return NextResponse.json({ error: body.error.errors[0].message }, { status: 400 });
+  }
+
+  const baseline = await db.resumeBaseline.findUnique({ where: { userId: user.id } });
+  if (!baseline) {
+    return NextResponse.json(
+      { error: "Upload a resume first at /resume" },
+      { status: 400 }
+    );
+  }
+
+  const { text, tokensIn, tokensOut } = await callAI({
+    system: MATCH_INSIGHTS_SYSTEM_PROMPT,
+    user: JSON.stringify({
+      job_posting_text: body.data.jobPostingText,
+      profile: baseline.content,
+    }),
+    maxTokens: 4000,
+  });
+
+  let insights: any;
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    insights = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+  } catch (e) {
+    return NextResponse.json(
+      { error: "AI returned invalid JSON", raw: text },
+      { status: 502 }
+    );
+  }
+
+  if (body.data.applicationId) {
+    await db.application.update({
+      where: { id: body.data.applicationId, userId: user.id },
+      data: {
+        matchTier: insights.tier,
+        matchScore: insights.score,
+        matchInsights: insights,
+        roleTitle: insights.role_title || undefined,
+        organization: insights.organization || undefined,
+      },
+    });
+  }
+
+  await db.usageEvent.create({
+    data: {
+      userId: user.id,
+      eventType: "ai_call",
+      moduleName: "match_insights",
+      tokensUsed: tokensIn + tokensOut,
+      costCents: Math.round(((tokensIn * 3 + tokensOut * 15) / 1_000_000) * 100),
+    },
+  });
+
+  return NextResponse.json({ insights });
+}
