@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 
-export default function AppRoot() {
-  const { userId } = auth();
+export default async function AppRoot() {
+  const { userId } = await auth();
   if (userId) redirect("/dashboard");
   redirect("/sign-in");
 }
