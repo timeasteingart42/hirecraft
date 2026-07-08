@@ -16,23 +16,10 @@ export default function NewApplication() {
     setError(null);
     setLoading(true);
 
-    const createRes = await fetch("/api/applications", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jobPostingText, jobPostingUrl }),
-    });
-    if (!createRes.ok) {
-      const data = await createRes.json();
-      setError(data.error || "Failed to create application");
-      setLoading(false);
-      return;
-    }
-    const { application } = await createRes.json();
-
     const insightsRes = await fetch("/api/ai/match-insights", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jobPostingText, applicationId: application.id }),
+      body: JSON.stringify({ jobPostingText }),
     });
     if (!insightsRes.ok) {
       const data = await insightsRes.json();
@@ -40,6 +27,28 @@ export default function NewApplication() {
       setLoading(false);
       return;
     }
+    const { insights } = await insightsRes.json();
+
+    const createRes = await fetch("/api/applications", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        jobPostingText,
+        jobPostingUrl,
+        roleTitle: insights.role_title,
+        organization: insights.organization,
+        matchTier: insights.tier,
+        matchScore: insights.score,
+        matchInsights: insights,
+      }),
+    });
+    if (!createRes.ok) {
+      const data = await createRes.json();
+      setError(data.error || "Failed to save application");
+      setLoading(false);
+      return;
+    }
+    const { application } = await createRes.json();
 
     router.push(`/applications/${application.id}`);
   }

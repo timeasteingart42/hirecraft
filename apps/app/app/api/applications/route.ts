@@ -20,6 +20,9 @@ const CreateSchema = z.object({
   jobPostingUrl: z.string().url().optional().or(z.literal("")),
   roleTitle: z.string().optional(),
   organization: z.string().optional(),
+  matchTier: z.string().optional(),
+  matchScore: z.number().int().optional(),
+  matchInsights: z.any().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -36,8 +39,11 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       jobPostingText: body.data.jobPostingText,
       jobPostingUrl: body.data.jobPostingUrl || null,
-      roleTitle: body.data.roleTitle || "Pending",
-      organization: body.data.organization || "Pending",
+      roleTitle: body.data.roleTitle || "Untitled role",
+      organization: body.data.organization || "Unknown organization",
+      matchTier: body.data.matchTier ?? null,
+      matchScore: body.data.matchScore ?? null,
+      matchInsights: body.data.matchInsights ?? undefined,
       status: "draft",
       statusHistory: [
         {
