@@ -4,6 +4,7 @@ import { callAI } from "@/lib/anthropic";
 import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/get-or-create-user";
 import { COVER_LETTER_SYSTEM_PROMPT } from "@/lib/prompts/cover-letter";
+import { assertAiQuota } from "@/lib/plan";
 
 export const maxDuration = 60;
 
@@ -34,6 +35,19 @@ export async function POST(req: NextRequest) {
   const baseline = await db.resumeBaseline.findUnique({ where: { userId: user.id } });
   if (!baseline) {
     return NextResponse.json({ error: "Upload a resume first" }, { status: 400 });
+  }
+
+  const quota = await assertAiQuota(user.id, user.plan);
+  if (!quota.ok) {
+    return NextResponse.json(
+      {
+        error: `Monthly limit reached on the ${quota.plan} plan (${quota.used}/${quota.limit}). Upgrade to Pro for unlimited.`,
+        code: "QUOTA_EXCEEDED",
+        used: quota.used,
+        limit: quota.limit,
+      },
+      { status: 402 }
+    );
   }
 
   const { text, tokensIn, tokensOut } = await callAI({

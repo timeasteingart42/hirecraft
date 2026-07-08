@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/get-or-create-user";
+import { getUsageThisMonth, planFor } from "@/lib/plan";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,8 @@ export default async function Dashboard() {
   if (!user) redirect("/sign-in");
 
   const baseline = await db.resumeBaseline.findUnique({ where: { userId: user.id } });
+  const plan = planFor(user.plan);
+  const usageThisMonth = await getUsageThisMonth(user.id);
   const applications = await db.application.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
@@ -59,6 +62,43 @@ export default async function Dashboard() {
             </Link>
           </div>
         )}
+
+        <div className="mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 border border-neutral-200 rounded bg-neutral-50">
+          <div>
+            <div className="text-xs uppercase tracking-widest text-neutral-500 mb-1">
+              Current plan
+            </div>
+            <div className="font-medium">
+              {plan.name}
+              {plan.monthlyAiCalls !== null && (
+                <span className="text-neutral-500 ml-2">
+                  · {usageThisMonth} / {plan.monthlyAiCalls} AI calls this month
+                </span>
+              )}
+              {plan.monthlyAiCalls === null && (
+                <span className="text-neutral-500 ml-2">· unlimited</span>
+              )}
+            </div>
+          </div>
+          {plan.id === "free" ? (
+            <Link
+              href="/pricing"
+              className="text-sm px-4 py-2 bg-brand text-paper rounded hover:bg-brand-dark transition-colors"
+            >
+              Upgrade to Pro
+            </Link>
+          ) : (
+            <form action="/api/stripe/portal" method="POST">
+              <button
+                type="submit"
+                className="text-sm px-4 py-2 border border-neutral-300 rounded hover:border-brand hover:text-brand transition-colors"
+              >
+                Manage billing
+              </button>
+            </form>
+          )}
+        </div>
+
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
           <Stat label="Total applications" value={stats.total} />

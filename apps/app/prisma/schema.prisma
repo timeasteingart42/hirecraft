@@ -16,6 +16,12 @@ model User {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  plan               String   @default("free")
+  stripeCustomerId   String?  @unique
+  stripeSubscriptionId String? @unique
+  subscriptionStatus String?
+  subscriptionRenewsAt DateTime?
+
   resumeBaseline     ResumeBaseline?
   applications       Application[]
   documents          Document[]

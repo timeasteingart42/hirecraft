@@ -4,6 +4,7 @@ import { callAI } from "@/lib/anthropic";
 import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/get-or-create-user";
 import { MATCH_INSIGHTS_SYSTEM_PROMPT } from "@/lib/prompts/match-insights";
+import { assertAiQuota } from "@/lib/plan";
 
 export const maxDuration = 60;
 
@@ -27,6 +28,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Upload a resume first at /resume" },
         { status: 400 }
+      );
+    }
+
+    const quota = await assertAiQuota(user.id, user.plan);
+    if (!quota.ok) {
+      return NextResponse.json(
+        {
+          error: `Monthly limit reached on the ${quota.plan} plan (${quota.used}/${quota.limit}). Upgrade to Pro for unlimited.`,
+          code: "QUOTA_EXCEEDED",
+          used: quota.used,
+          limit: quota.limit,
+        },
+        { status: 402 }
       );
     }
 
