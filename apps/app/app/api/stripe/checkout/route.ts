@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe, PLANS } from "@/lib/stripe";
+import { getStripe, proPriceId } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/get-or-create-user";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(_req: NextRequest) {
   const user = await getOrCreateUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const priceId = PLANS.pro.stripePriceId;
+  const priceId = proPriceId();
   if (!priceId) {
     return NextResponse.json(
       { error: "Stripe price not configured. Set STRIPE_PRICE_PRO_MONTHLY." },
       { status: 500 }
     );
   }
+
+  const stripe = getStripe();
 
   let customerId = user.stripeCustomerId;
   if (!customerId) {
