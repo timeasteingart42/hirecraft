@@ -22,12 +22,16 @@ export async function callAI({
     messages: [{ role: "user", content: user }],
   });
 
-  const text =
-    response.content[0].type === "text" ? response.content[0].text : "";
+  const text = response.content
+    .map((c) => (c.type === "text" ? c.text : ""))
+    .join("");
 
   return {
     text,
     tokensIn: response.usage.input_tokens,
     tokensOut: response.usage.output_tokens,
+    modelUsed: response.model,
+    stopReason: response.stop_reason,
+    contentTypes: response.content.map((c) => c.type),
   };
 }

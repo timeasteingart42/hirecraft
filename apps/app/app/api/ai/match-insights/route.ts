@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { text, tokensIn, tokensOut } = await callAI({
+    const aiResult = await callAI({
       system: MATCH_INSIGHTS_SYSTEM_PROMPT,
       user: JSON.stringify({
         job_posting_text: body.data.jobPostingText,
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       }),
       maxTokens: 4000,
     });
+    const { text, tokensIn, tokensOut } = aiResult;
 
     let insights: any;
     try {
@@ -48,7 +49,14 @@ export async function POST(req: NextRequest) {
       insights = JSON.parse(jsonStr);
     } catch (e) {
       return NextResponse.json(
-        { error: "AI returned invalid JSON", raw: text.slice(0, 500) },
+        {
+          error: "AI returned invalid JSON",
+          raw: text.slice(0, 500),
+          modelUsed: (aiResult as any).modelUsed,
+          stopReason: (aiResult as any).stopReason,
+          contentTypes: (aiResult as any).contentTypes,
+          tokensOut,
+        },
         { status: 502 }
       );
     }
