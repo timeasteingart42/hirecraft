@@ -4,19 +4,22 @@ export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export const MODEL = "claude-haiku-4-5-20251001";
+export const HAIKU_MODEL = "claude-haiku-4-5-20251001";
+export const SONNET_MODEL = "claude-sonnet-5";
 
 export async function callAI({
   system,
   user,
   maxTokens = 4000,
+  model = HAIKU_MODEL,
 }: {
   system: string;
   user: string;
   maxTokens?: number;
+  model?: string;
 }) {
   const response = await anthropic.messages.create({
-    model: MODEL,
+    model,
     max_tokens: maxTokens,
     system,
     messages: [{ role: "user", content: user }],

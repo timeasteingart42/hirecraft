@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       system: MATCH_INSIGHTS_SYSTEM_PROMPT,
       user: JSON.stringify({
         job_posting_text: body.data.jobPostingText,
-        profile: baseline.content,
+        profile: baseline.rawText,
       }),
       maxTokens: 4000,
     });

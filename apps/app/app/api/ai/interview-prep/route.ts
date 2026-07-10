@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       user: JSON.stringify({
         job_posting_text: application.jobPostingText,
         match_insights: application.matchInsights,
-        profile: baseline.content,
+        profile: baseline.rawText,
       }),
       maxTokens: 4000,
     });

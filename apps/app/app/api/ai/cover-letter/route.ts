@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { callAI } from "@/lib/anthropic";
+import { callAI, SONNET_MODEL } from "@/lib/anthropic";
 import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/get-or-create-user";
 import { COVER_LETTER_SYSTEM_PROMPT } from "@/lib/prompts/cover-letter";
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     user: JSON.stringify({
       job_posting_text: application.jobPostingText,
       match_insights: application.matchInsights,
-      profile: baseline.content,
+      profile: baseline.rawText,
       tone: body.data.tone,
       length: body.data.length,
       author_name: user.displayName || user.email,
@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
       }),
     }),
     maxTokens: 3000,
+    model: SONNET_MODEL,
   });
 
   let letter: any;
