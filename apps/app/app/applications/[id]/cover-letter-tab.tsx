@@ -169,7 +169,7 @@ export function CoverLetterTab({
                 )}
               </div>
               <div className="flex items-center gap-2 text-xs">
-                {dirty && (
+                {dirty ? (
                   <>
                     <button
                       onClick={revertToServer}
@@ -184,6 +184,21 @@ export function CoverLetterTab({
                     >
                       {saving ? "Saving..." : "Save edits"}
                     </button>
+                  </>
+                ) : (
+                  <>
+                    <a
+                      href={`/api/documents/${existing.id}/export/docx`}
+                      className="px-3 py-1 border border-neutral-300 rounded hover:border-brand hover:text-brand"
+                    >
+                      Download .docx
+                    </a>
+                    <a
+                      href={`/api/documents/${existing.id}/export/txt`}
+                      className="px-3 py-1 border border-neutral-300 rounded hover:border-brand hover:text-brand"
+                    >
+                      Download .txt
+                    </a>
                   </>
                 )}
               </div>
