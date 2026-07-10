@@ -20,11 +20,11 @@ export const PLANS = {
     id: "free",
     name: "Free",
     priceMonthly: 0,
-    monthlyAiCalls: 3,
+    monthlyAiCalls: 15,
     features: [
-      "3 job match analyses / month",
-      "3 cover letters / month",
+      "15 AI analyses / month (mix match, cover letter, interview prep)",
       "Application tracker",
+      "Resume upload with PDF and DOCX",
     ],
   },
   pro: {

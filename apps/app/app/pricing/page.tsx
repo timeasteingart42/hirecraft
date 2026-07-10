@@ -50,10 +50,10 @@ export default function PricingPage() {
             <div className="font-serif text-5xl mb-2">€0</div>
             <div className="text-sm text-neutral-500 mb-8">forever</div>
             <ul className="space-y-3 text-sm mb-8">
-              <li>3 match analyses / month</li>
-              <li>3 cover letters / month</li>
+              <li>15 AI analyses / month</li>
+              <li>Match insights, cover letters, interview prep</li>
               <li>Application tracker</li>
-              <li>Resume baseline</li>
+              <li>PDF and DOCX resume upload</li>
             </ul>
             <Link
               href="/dashboard"
