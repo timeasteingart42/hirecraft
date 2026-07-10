@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/get-or-create-user";
 import { CoverLetterTab } from "./cover-letter-tab";
 import { MatchInsightsTab } from "./match-insights-tab";
+import { InterviewPrepTab } from "./interview-prep-tab";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export default async function ApplicationDetail({
   if (!application) notFound();
 
   const coverLetter = application.documents.find((d) => d.type === "cover_letter");
+  const interviewPrep = application.documents.find((d) => d.type === "interview_prep");
 
   return (
     <div className="min-h-screen">
@@ -62,7 +64,7 @@ export default async function ApplicationDetail({
             <Tab active label="Match insights" />
             <Tab active={!!coverLetter} label="Cover letter" />
             <Tab label="Resume (soon)" />
-            <Tab label="Interview prep (soon)" />
+            <Tab active={!!interviewPrep} label="Interview prep" />
           </div>
         </div>
 
@@ -71,9 +73,14 @@ export default async function ApplicationDetail({
           <MatchInsightsTab insights={application.matchInsights as any} />
         </section>
 
-        <section>
+        <section className="mb-16">
           <h2 className="font-serif text-2xl mb-4">Cover letter</h2>
           <CoverLetterTab applicationId={application.id} existing={coverLetter as any} />
+        </section>
+
+        <section>
+          <h2 className="font-serif text-2xl mb-4">Interview prep</h2>
+          <InterviewPrepTab applicationId={application.id} existing={interviewPrep as any} />
         </section>
       </main>
     </div>
