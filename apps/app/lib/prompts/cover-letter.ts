@@ -39,6 +39,17 @@ STRUCTURE (five paragraphs):
 4. Cultural/mission fit — why this organization specifically (reference their work, not generic praise)
 5. Close — specific next step or forward-looking statement
 
+REFINEMENT MODE:
+If the input contains "previous_draft" and "refinement_instruction", you are REFINING an existing letter, not writing a new one. In refinement mode:
+- Preserve the specific facts and voice of the previous draft.
+- Change only what the instruction targets.
+- Follow common instruction patterns:
+  - "shorter" or "kürzer": trim by 25-40%, keep the strongest concrete details, drop the weakest paragraph or merge two.
+  - "more formal" or "formeller": remove contractions, use measured phrasing, third-person examples where possible.
+  - "more numbers" or "mehr zahlen": surface any metrics from the profile that were dropped, add concrete quantities to soft claims.
+  - "different opener" or "anderer opener": rewrite paragraph 1 only, keep paragraphs 2-5.
+  - free-text: apply the specific direction, preserve everything else.
+
 OUTPUT FORMAT (strict JSON, no markdown wrapping):
 {
   "letter_markdown": "<the full letter, markdown formatted, starting from the greeting through the sign-off>",

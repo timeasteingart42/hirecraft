@@ -14,6 +14,8 @@ const BodySchema = z.object({
     .enum(["formal-institutional", "warm-professional", "bold-thesis-driven"])
     .default("warm-professional"),
   length: z.enum(["short", "standard", "long"]).default("standard"),
+  refinementInstruction: z.string().max(500).optional(),
+  previousDraft: z.string().max(6000).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -50,6 +52,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const isRefinement =
+    !!body.data.refinementInstruction && !!body.data.previousDraft;
+
   const { text, tokensIn, tokensOut } = await callAI({
     system: COVER_LETTER_SYSTEM_PROMPT,
     user: JSON.stringify({
@@ -59,6 +64,10 @@ export async function POST(req: NextRequest) {
       tone: body.data.tone,
       length: body.data.length,
       author_name: user.displayName || user.email,
+      ...(isRefinement && {
+        previous_draft: body.data.previousDraft,
+        refinement_instruction: body.data.refinementInstruction,
+      }),
     }),
     maxTokens: 3000,
   });
@@ -77,21 +86,36 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const doc = await db.document.create({
-    data: {
+  const metadata = {
+    tone: body.data.tone,
+    length: body.data.length,
+    word_count: letter.word_count,
+    checks: letter.checks,
+    alternate_opening: letter.alternate_opening,
+  };
+
+  const existing = await db.document.findFirst({
+    where: {
       userId: user.id,
       applicationId: application.id,
       type: "cover_letter",
-      content: letter.letter_markdown,
-      metadata: {
-        tone: body.data.tone,
-        length: body.data.length,
-        word_count: letter.word_count,
-        checks: letter.checks,
-        alternate_opening: letter.alternate_opening,
-      },
     },
   });
+
+  const doc = existing
+    ? await db.document.update({
+        where: { id: existing.id },
+        data: { content: letter.letter_markdown, metadata },
+      })
+    : await db.document.create({
+        data: {
+          userId: user.id,
+          applicationId: application.id,
+          type: "cover_letter",
+          content: letter.letter_markdown,
+          metadata,
+        },
+      });
 
   await db.usageEvent.create({
     data: {
