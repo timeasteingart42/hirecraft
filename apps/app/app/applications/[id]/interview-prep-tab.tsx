@@ -30,14 +30,14 @@ const TYPE_LABEL: Record<Question["type"], string> = {
   competency: "Behavioural",
   domain: "Domain",
   fit: "Fit",
-  red_flag: "Gap-probe",
+  red_flag: "Gap probe",
 };
 
-const TYPE_STYLE: Record<Question["type"], string> = {
-  competency: "bg-status-fit/10 text-status-fit border-status-fit/30",
-  domain: "bg-brand/10 text-brand border-brand/30",
-  fit: "bg-status-strong/10 text-status-strong border-status-strong/30",
-  red_flag: "bg-status-reach/10 text-status-reach border-status-reach/30",
+const TYPE_ACCENT: Record<Question["type"], string> = {
+  competency: "border-l-status-fit",
+  domain: "border-l-ink",
+  fit: "border-l-status-strong",
+  red_flag: "border-l-status-reach",
 };
 
 export function InterviewPrepTab({
@@ -80,55 +80,52 @@ export function InterviewPrepTab({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="p-6 border border-neutral-200 rounded bg-neutral-50">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs uppercase tracking-widest text-neutral-500 mb-1">
-              Interview prep
-            </div>
-            <div className="text-sm text-neutral-600">
-              Questions tailored to this role and your background, with STAR scaffolds and gap-probe warnings.
-            </div>
-          </div>
-          <button
-            onClick={generate}
-            disabled={generating}
-            className="px-6 py-2 bg-brand text-paper rounded hover:bg-brand-dark disabled:opacity-40 transition-colors whitespace-nowrap"
-          >
-            {generating ? "Generating..." : prep ? "Regenerate" : "Generate prep"}
-          </button>
+    <div className="space-y-8">
+      <div className="card-inset p-6 flex items-center justify-between gap-4">
+        <div>
+          <div className="eyebrow mb-2">Interview prep</div>
+          <p className="text-sm text-neutral-600 leading-relaxed max-w-xl">
+            Questions tailored to this role and your background, with STAR
+            scaffolds anchored in your profile.
+          </p>
         </div>
+        <button onClick={generate} disabled={generating} className="btn-primary shrink-0">
+          {generating ? "Writing…" : prep ? "Regenerate" : "Generate prep"}
+        </button>
       </div>
 
       {error && (
-        <div className="p-4 bg-status-skip/10 border border-status-skip/30 rounded text-sm">
+        <div className="card px-5 py-4 border-l-2 border-l-status-skip text-sm text-neutral-700">
           {error}
         </div>
       )}
 
       {prep && (
         <>
-          <div className="space-y-4">
+          <ol className="space-y-4">
             {prep.questions.map((q, i) => (
-              <div key={i} className="p-6 border border-neutral-200 rounded bg-white">
-                <div className="flex items-start gap-3 mb-4">
-                  <span
-                    className={`text-xs uppercase tracking-widest px-2 py-1 border rounded ${TYPE_STYLE[q.type]}`}
-                  >
+              <li
+                key={i}
+                className={`card p-6 border-l-2 ${TYPE_ACCENT[q.type]}`}
+              >
+                <div className="flex items-start gap-4 mb-4">
+                  <span className="chip-neutral shrink-0 mt-1">
                     {TYPE_LABEL[q.type]}
                   </span>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="font-serif text-lg leading-snug mb-1">
-                      Q{i + 1}. {q.question}
+                      <span className="text-neutral-400 mr-1 tabular-nums">
+                        {String(i + 1).padStart(2, "0")}.
+                      </span>
+                      {q.question}
                     </div>
-                    <div className="text-sm text-neutral-500 italic">
-                      Why they ask: {q.why_they_ask}
+                    <div className="text-xs text-neutral-500 italic">
+                      Why they ask · {q.why_they_ask}
                     </div>
                   </div>
                 </div>
 
-                <div className="pl-4 border-l-2 border-neutral-200 space-y-3 text-sm">
+                <div className="pl-3 border-l border-neutral-200 space-y-2 text-sm">
                   <StarLine label="Situation" text={q.star_scaffold.situation} />
                   <StarLine label="Task" text={q.star_scaffold.task} />
                   <StarLine label="Action" text={q.star_scaffold.action} />
@@ -136,44 +133,48 @@ export function InterviewPrepTab({
                 </div>
 
                 {q.watch_out && (
-                  <div className="mt-4 p-3 bg-accent/10 border border-accent/30 rounded text-sm">
-                    <span className="font-medium text-status-reach">Watch out:</span>{" "}
-                    {q.watch_out}
+                  <div className="mt-4 pt-4 border-t border-neutral-150 text-sm">
+                    <span className="text-neutral-500 mr-2 text-xs uppercase tracking-widest">
+                      Watch out
+                    </span>
+                    <span className="text-neutral-700">{q.watch_out}</span>
                   </div>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
 
           {prep.curveball && (
-            <div className="p-6 border-2 border-brand rounded bg-brand/5">
-              <div className="text-xs uppercase tracking-widest text-brand mb-2">
-                Curveball
+            <div className="card p-8 border-l-2 border-l-ink">
+              <div className="eyebrow mb-3">Curveball</div>
+              <div className="font-serif text-xl leading-snug mb-3">
+                {prep.curveball.question}
               </div>
-              <div className="font-serif text-lg mb-2">{prep.curveball.question}</div>
-              <div className="text-sm text-neutral-600 italic mb-3">
+              <p className="text-sm text-neutral-600 italic mb-4">
                 {prep.curveball.why_it_matters}
-              </div>
-              <div className="text-sm">
-                <span className="font-medium">Suggested angle:</span>{" "}
+              </p>
+              <div className="text-sm text-neutral-700">
+                <span className="text-xs uppercase tracking-widest text-neutral-500 mr-2">
+                  Angle
+                </span>
                 {prep.curveball.suggested_angle}
               </div>
             </div>
           )}
 
           {prep.questions_to_ask_them && prep.questions_to_ask_them.length > 0 && (
-            <div className="p-6 border border-neutral-200 rounded bg-white">
-              <div className="text-xs uppercase tracking-widest text-brand mb-3">
-                Questions to ask them
-              </div>
-              <ul className="space-y-2 text-sm">
+            <div className="card p-6">
+              <div className="eyebrow mb-4">Questions to ask them</div>
+              <ol className="space-y-3 text-sm">
                 {prep.questions_to_ask_them.map((q, i) => (
-                  <li key={i} className="flex gap-3">
-                    <span className="text-neutral-400">{i + 1}.</span>
-                    <span>{q}</span>
+                  <li key={i} className="flex gap-3 leading-relaxed">
+                    <span className="text-neutral-400 tabular-nums shrink-0">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="text-neutral-700">{q}</span>
                   </li>
                 ))}
-              </ul>
+              </ol>
             </div>
           )}
         </>
@@ -184,11 +185,11 @@ export function InterviewPrepTab({
 
 function StarLine({ label, text }: { label: string; text: string }) {
   return (
-    <div>
-      <span className="text-xs uppercase tracking-widest text-neutral-500 mr-2">
+    <div className="flex gap-3 leading-relaxed">
+      <span className="text-xs uppercase tracking-widest text-neutral-500 shrink-0 w-[64px] pt-0.5">
         {label}
       </span>
-      <span>{text}</span>
+      <span className="text-neutral-700">{text}</span>
     </div>
   );
 }

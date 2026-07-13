@@ -38,3 +38,23 @@ export async function callAI({
     contentTypes: response.content.map((c) => c.type),
   };
 }
+
+export async function streamAI({
+  system,
+  user,
+  maxTokens = 4000,
+  model = HAIKU_MODEL,
+}: {
+  system: string;
+  user: string;
+  maxTokens?: number;
+  model?: string;
+}) {
+  const stream = anthropic.messages.stream({
+    model,
+    max_tokens: maxTokens,
+    system,
+    messages: [{ role: "user", content: user }],
+  });
+  return stream;
+}
