@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         refinement_instruction: body.data.refinementInstruction,
       }),
     }),
-    maxTokens: 2000,
+    maxTokens: 3500,
   });
 
   let letter: any;
