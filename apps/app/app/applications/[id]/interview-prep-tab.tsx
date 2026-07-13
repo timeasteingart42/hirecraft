@@ -33,13 +33,6 @@ const TYPE_LABEL: Record<Question["type"], string> = {
   red_flag: "Gap probe",
 };
 
-const TYPE_ACCENT: Record<Question["type"], string> = {
-  competency: "border-l-status-fit",
-  domain: "border-l-ink",
-  fit: "border-l-status-strong",
-  red_flag: "border-l-status-reach",
-};
-
 export function InterviewPrepTab({
   applicationId,
   existing,
@@ -49,6 +42,7 @@ export function InterviewPrepTab({
 }) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
   const router = useRouter();
 
   const prep: Prep | null = existing?.content
@@ -80,95 +74,98 @@ export function InterviewPrepTab({
   }
 
   return (
-    <div className="space-y-8">
-      <div className="card-inset p-6 flex items-center justify-between gap-4">
-        <div>
-          <div className="eyebrow mb-2">Interview prep</div>
-          <p className="text-sm text-neutral-600 leading-relaxed max-w-xl">
-            Questions tailored to this role and your background, with STAR
-            scaffolds anchored in your profile.
-          </p>
-        </div>
+    <div className="space-y-10">
+      <div className="flex items-end justify-between">
+        <p className="text-sm text-neutral-600 max-w-xl leading-relaxed">
+          Questions tailored to this role, with STAR scaffolds anchored in your profile.
+        </p>
         <button onClick={generate} disabled={generating} className="btn-primary shrink-0">
           {generating ? "Writing…" : prep ? "Regenerate" : "Generate prep"}
         </button>
       </div>
 
       {error && (
-        <div className="card px-5 py-4 border-l-2 border-l-status-skip text-sm text-neutral-700">
-          {error}
-        </div>
+        <div className="text-sm text-status-skip">{error}</div>
       )}
 
       {prep && (
         <>
-          <ol className="space-y-4">
-            {prep.questions.map((q, i) => (
-              <li
-                key={i}
-                className={`card p-6 border-l-2 ${TYPE_ACCENT[q.type]}`}
-              >
-                <div className="flex items-start gap-4 mb-4">
-                  <span className="chip-neutral shrink-0 mt-1">
-                    {TYPE_LABEL[q.type]}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-serif text-lg leading-snug mb-1">
-                      <span className="text-neutral-400 mr-1 tabular-nums">
-                        {String(i + 1).padStart(2, "0")}.
+          <ol className="border-t border-neutral-200">
+            {prep.questions.map((q, i) => {
+              const open = openIndex === i;
+              return (
+                <li key={i} className="border-b border-neutral-200">
+                  <button
+                    onClick={() => setOpenIndex(open ? null : i)}
+                    className="w-full text-left py-6 group"
+                  >
+                    <div className="flex items-start gap-6">
+                      <span className="text-xs text-neutral-400 tabular-nums font-mono shrink-0 pt-1.5">
+                        {String(i + 1).padStart(2, "0")}
                       </span>
-                      {q.question}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-3 mb-1">
+                          <span className="eyebrow">{TYPE_LABEL[q.type]}</span>
+                        </div>
+                        <div className="font-serif text-lg leading-snug text-ink group-hover:opacity-80 transition-opacity">
+                          {q.question}
+                        </div>
+                      </div>
+                      <span className="shrink-0 text-neutral-400 pt-1.5 text-sm">
+                        {open ? "−" : "+"}
+                      </span>
                     </div>
-                    <div className="text-xs text-neutral-500 italic">
-                      Why they ask · {q.why_they_ask}
+                  </button>
+
+                  {open && (
+                    <div className="pl-14 pr-2 pb-8 animate-fade-in">
+                      <p className="text-sm text-neutral-500 italic mb-5">
+                        Why they ask · {q.why_they_ask}
+                      </p>
+
+                      <div className="space-y-3 mb-6">
+                        <StarLine label="Situation" text={q.star_scaffold.situation} />
+                        <StarLine label="Task" text={q.star_scaffold.task} />
+                        <StarLine label="Action" text={q.star_scaffold.action} />
+                        <StarLine label="Result" text={q.star_scaffold.result} />
+                      </div>
+
+                      {q.watch_out && (
+                        <div className="text-sm text-neutral-700 pt-4 border-t border-neutral-100">
+                          <span className="eyebrow mr-3">Watch out</span>
+                          {q.watch_out}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </div>
-
-                <div className="pl-3 border-l border-neutral-200 space-y-2 text-sm">
-                  <StarLine label="Situation" text={q.star_scaffold.situation} />
-                  <StarLine label="Task" text={q.star_scaffold.task} />
-                  <StarLine label="Action" text={q.star_scaffold.action} />
-                  <StarLine label="Result" text={q.star_scaffold.result} />
-                </div>
-
-                {q.watch_out && (
-                  <div className="mt-4 pt-4 border-t border-neutral-150 text-sm">
-                    <span className="text-neutral-500 mr-2 text-xs uppercase tracking-widest">
-                      Watch out
-                    </span>
-                    <span className="text-neutral-700">{q.watch_out}</span>
-                  </div>
-                )}
-              </li>
-            ))}
+                  )}
+                </li>
+              );
+            })}
           </ol>
 
           {prep.curveball && (
-            <div className="card p-8 border-l-2 border-l-ink">
+            <div className="pt-4">
               <div className="eyebrow mb-3">Curveball</div>
-              <div className="font-serif text-xl leading-snug mb-3">
+              <div className="font-serif text-2xl leading-snug mb-4 max-w-2xl">
                 {prep.curveball.question}
               </div>
-              <p className="text-sm text-neutral-600 italic mb-4">
+              <p className="text-sm text-neutral-500 italic mb-4">
                 {prep.curveball.why_it_matters}
               </p>
-              <div className="text-sm text-neutral-700">
-                <span className="text-xs uppercase tracking-widest text-neutral-500 mr-2">
-                  Angle
-                </span>
+              <p className="text-sm text-neutral-700 leading-relaxed max-w-2xl">
+                <span className="eyebrow mr-3">Angle</span>
                 {prep.curveball.suggested_angle}
-              </div>
+              </p>
             </div>
           )}
 
           {prep.questions_to_ask_them && prep.questions_to_ask_them.length > 0 && (
-            <div className="card p-6">
+            <div className="pt-6 border-t border-neutral-200">
               <div className="eyebrow mb-4">Questions to ask them</div>
-              <ol className="space-y-3 text-sm">
+              <ol className="space-y-3 text-sm max-w-2xl">
                 {prep.questions_to_ask_them.map((q, i) => (
-                  <li key={i} className="flex gap-3 leading-relaxed">
-                    <span className="text-neutral-400 tabular-nums shrink-0">
+                  <li key={i} className="flex gap-4 leading-relaxed">
+                    <span className="text-neutral-400 tabular-nums font-mono shrink-0">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span className="text-neutral-700">{q}</span>
@@ -185,10 +182,8 @@ export function InterviewPrepTab({
 
 function StarLine({ label, text }: { label: string; text: string }) {
   return (
-    <div className="flex gap-3 leading-relaxed">
-      <span className="text-xs uppercase tracking-widest text-neutral-500 shrink-0 w-[64px] pt-0.5">
-        {label}
-      </span>
+    <div className="flex gap-4 leading-relaxed text-sm">
+      <span className="eyebrow shrink-0 w-[70px] pt-0.5">{label}</span>
       <span className="text-neutral-700">{text}</span>
     </div>
   );

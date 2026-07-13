@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { streamAI, SONNET_MODEL } from "@/lib/anthropic";
+import { streamAI, HAIKU_MODEL } from "@/lib/anthropic";
 import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/get-or-create-user";
 import { COVER_LETTER_SYSTEM_PROMPT } from "@/lib/prompts/cover-letter";
@@ -77,8 +77,8 @@ export async function POST(req: NextRequest) {
         refinement_instruction: body.data.refinementInstruction,
       }),
     }),
-    maxTokens: 3000,
-    model: SONNET_MODEL,
+    maxTokens: 2000,
+    model: HAIKU_MODEL,
   });
 
   const encoder = new TextEncoder();
