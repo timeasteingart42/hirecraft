@@ -54,8 +54,8 @@
   .chip {
     @apply inline-block px-2.5 py-0.5 rounded text-[11px] font-medium uppercase tracking-widest;
   }
-  .chip-strong { @apply chip bg-status-strong/8 text-status-strong border border-status-strong/25; }
-  .chip-fit { @apply chip bg-status-fit/8 text-status-fit border border-status-fit/25; }
+  .chip-strong { @apply chip bg-status-strong/10 text-status-strong border border-status-strong/20; }
+  .chip-fit { @apply chip bg-status-fit/10 text-status-fit border border-status-fit/20; }
   .chip-reach { @apply chip bg-status-reach/10 text-status-reach border border-status-reach/30; }
   .chip-skip { @apply chip bg-status-skip/10 text-status-skip border border-status-skip/30; }
   .chip-neutral { @apply chip bg-neutral-100 text-neutral-600 border border-neutral-200; }
