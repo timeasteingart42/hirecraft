@@ -1,20 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+const STAGES = [
+  { at: 0, label: "Reading job posting" },
+  { at: 3, label: "Extracting requirements" },
+  { at: 7, label: "Matching your profile" },
+  { at: 12, label: "Computing fit and score" },
+  { at: 18, label: "Almost done" },
+];
 
 export default function NewApplication() {
   const [jobPostingText, setJobPostingText] = useState("");
   const [jobPostingUrl, setJobPostingUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) return;
+    const start = Date.now();
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - start) / 1000));
+    }, 500);
+    return () => clearInterval(id);
+  }, [loading]);
+
+  const stageLabel =
+    [...STAGES].reverse().find((s) => elapsed >= s.at)?.label ?? STAGES[0].label;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    setElapsed(0);
 
     const insightsRes = await fetch("/api/ai/match-insights", {
       method: "POST",
@@ -49,68 +71,91 @@ export default function NewApplication() {
       return;
     }
     const { application } = await createRes.json();
-
     router.push(`/applications/${application.id}`);
   }
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-neutral-200 bg-paper">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <Link href="/dashboard" className="text-sm text-neutral-500 hover:text-brand">
-            ← Back to dashboard
+      <header className="border-b border-neutral-150 bg-paper/95 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-3xl mx-auto px-8 py-4 flex items-center justify-between text-sm">
+          <Link
+            href="/dashboard"
+            className="text-neutral-500 hover:text-ink transition-colors"
+          >
+            ← Dashboard
           </Link>
         </div>
       </header>
-      <main className="max-w-3xl mx-auto px-6 py-10">
-        <div className="mb-8">
-          <div className="text-xs uppercase tracking-widest text-brand mb-2">
-            New application
-          </div>
-          <h1 className="font-serif text-4xl tracking-tight mb-3">
+      <main className="max-w-3xl mx-auto px-8 py-14">
+        <div className="mb-10">
+          <div className="eyebrow mb-3">New application</div>
+          <h1 className="font-serif text-4xl leading-tight mb-3">
             Analyze a job posting
           </h1>
-          <p className="text-neutral-500">
-            Paste the full job posting. We compute your fit score and identify strengths and gaps.
+          <p className="text-neutral-500 leading-relaxed max-w-xl">
+            Paste the full job posting. We compute your fit score and identify
+            strengths, gaps, and the next step.
           </p>
         </div>
-        <form onSubmit={submit} className="space-y-6">
+
+        <form onSubmit={submit} className="space-y-8">
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Job posting URL (optional)
-            </label>
+            <label className="eyebrow block mb-2">Posting URL — optional</label>
             <input
               type="url"
               value={jobPostingUrl}
               onChange={(e) => setJobPostingUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full p-3 border border-neutral-200 rounded focus:outline-none focus:border-brand"
+              placeholder="https://…"
+              className="field"
+              disabled={loading}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Full job posting text
-            </label>
+            <label className="eyebrow block mb-2">Full posting text</label>
             <textarea
               value={jobPostingText}
               onChange={(e) => setJobPostingText(e.target.value)}
-              placeholder="Paste the entire job posting: role, requirements, responsibilities, everything..."
-              className="w-full h-96 p-4 border border-neutral-200 rounded font-mono text-sm focus:outline-none focus:border-brand"
+              placeholder="Paste the entire posting: role, requirements, responsibilities, everything."
+              className="w-full h-96 px-4 py-3 border border-neutral-200 rounded font-mono text-[13px] leading-relaxed bg-panel focus:outline-none focus:border-ink transition-colors"
               required
+              disabled={loading}
+              minLength={100}
             />
+            <div className="mt-1.5 text-xs text-neutral-400 tabular-nums">
+              {jobPostingText.length.toLocaleString()} chars
+              {jobPostingText.length < 100 && jobPostingText.length > 0 && (
+                <span className="ml-2 text-status-reach">
+                  need at least 100 to analyze
+                </span>
+              )}
+            </div>
           </div>
+
           {error && (
-            <div className="p-4 bg-status-skip/10 border border-status-skip/30 rounded text-sm">
+            <div className="text-sm text-status-skip animate-fade-in">
               {error}
             </div>
           )}
-          <button
-            type="submit"
-            disabled={loading || jobPostingText.length < 100}
-            className="px-6 py-3 bg-brand text-paper rounded hover:bg-brand-dark disabled:opacity-40 transition-colors"
-          >
-            {loading ? "Analyzing..." : "Analyze fit"}
-          </button>
+
+          <div className="flex items-center gap-5">
+            <button
+              type="submit"
+              disabled={loading || jobPostingText.length < 100}
+              className="btn-primary"
+            >
+              {loading ? "Analyzing…" : "Analyze fit"}
+            </button>
+
+            {loading && (
+              <div className="flex items-center gap-3 text-sm animate-fade-in">
+                <span className="inline-block w-2 h-2 bg-ink rounded-full animate-pulse" />
+                <span className="text-neutral-600">{stageLabel}</span>
+                <span className="text-neutral-400 tabular-nums text-xs">
+                  {elapsed}s
+                </span>
+              </div>
+            )}
+          </div>
         </form>
       </main>
     </div>

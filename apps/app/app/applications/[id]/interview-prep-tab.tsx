@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+
+const PREP_STAGES = [
+  { at: 0, label: "Reading job posting" },
+  { at: 4, label: "Extracting likely question angles" },
+  { at: 10, label: "Building STAR scaffolds from your profile" },
+  { at: 18, label: "Almost done" },
+];
 
 type Question = {
   type: "competency" | "domain" | "fit" | "red_flag";
@@ -43,7 +50,21 @@ export function InterviewPrepTab({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [elapsed, setElapsed] = useState(0);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!generating) return;
+    const start = Date.now();
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - start) / 1000));
+    }, 500);
+    return () => clearInterval(id);
+  }, [generating]);
+
+  const stageLabel =
+    [...PREP_STAGES].reverse().find((s) => elapsed >= s.at)?.label ??
+    PREP_STAGES[0].label;
 
   const prep: Prep | null = existing?.content
     ? (() => {
@@ -58,6 +79,7 @@ export function InterviewPrepTab({
   async function generate() {
     setError(null);
     setGenerating(true);
+    setElapsed(0);
     const res = await fetch("/api/ai/interview-prep", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -75,13 +97,22 @@ export function InterviewPrepTab({
 
   return (
     <div className="space-y-10">
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-between gap-6">
         <p className="text-sm text-neutral-600 max-w-xl leading-relaxed">
           Questions tailored to this role, with STAR scaffolds anchored in your profile.
         </p>
-        <button onClick={generate} disabled={generating} className="btn-primary shrink-0">
-          {generating ? "Writing…" : prep ? "Regenerate" : "Generate prep"}
-        </button>
+        <div className="flex items-center gap-4 shrink-0">
+          {generating && (
+            <div className="flex items-center gap-3 text-sm animate-fade-in">
+              <span className="inline-block w-2 h-2 bg-ink rounded-full animate-pulse" />
+              <span className="text-neutral-600">{stageLabel}</span>
+              <span className="text-neutral-400 tabular-nums text-xs">{elapsed}s</span>
+            </div>
+          )}
+          <button onClick={generate} disabled={generating} className="btn-primary shrink-0">
+            {generating ? "Writing…" : prep ? "Regenerate" : "Generate prep"}
+          </button>
+        </div>
       </div>
 
       {error && (

@@ -14,6 +14,22 @@ const PRESET_CHIPS: { label: string; instruction: string }[] = [
   { label: "Less generic", instruction: "Cut generic phrasing. Every sentence must contain a specific detail or claim." },
 ];
 
+const FRAGMENT_CHIPS: { label: string; instruction: string }[] = [
+  { label: "Rephrase", instruction: "Rephrase this in the same register, keeping every fact intact." },
+  { label: "Shorter", instruction: "Make this fragment tighter and shorter. Cut filler." },
+  { label: "More formal", instruction: "Make this fragment more formal. No contractions." },
+  { label: "More numbers", instruction: "Surface concrete numbers or specifics from the profile for this fragment." },
+  { label: "Less generic", instruction: "Rewrite this fragment. Every sentence must contain a specific detail." },
+];
+
+type Selection = {
+  start: number;
+  end: number;
+  text: string;
+  top: number;
+  left: number;
+} | null;
+
 type Draft = { text: string; wordCount?: number; alternateOpening?: string };
 
 export function CoverLetterTab({
@@ -42,6 +58,9 @@ export function CoverLetterTab({
   });
   const [activeDraft, setActiveDraft] = useState<"a" | "b">("a");
   const [dirty, setDirty] = useState(false);
+  const [selection, setSelection] = useState<Selection>(null);
+  const [fragmentRefining, setFragmentRefining] = useState<string | null>(null);
+  const [customFragmentInstruction, setCustomFragmentInstruction] = useState("");
   const draftRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
@@ -234,7 +253,66 @@ export function CoverLetterTab({
     setDirty(true);
   }
 
-  const busy = generating || !!refining;
+  function handleSelect() {
+    const el = draftRef.current;
+    if (!el || activeDraft !== "a" || busy) {
+      setSelection(null);
+      return;
+    }
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    if (end - start < 4) {
+      setSelection(null);
+      return;
+    }
+    const text = el.value.slice(start, end);
+    const rect = el.getBoundingClientRect();
+    const parentRect = el.offsetParent?.getBoundingClientRect() ?? rect;
+    setSelection({
+      start,
+      end,
+      text,
+      top: rect.top - parentRect.top - 8,
+      left: rect.left - parentRect.left + Math.min(240, rect.width / 2),
+    });
+  }
+
+  async function refineFragment(instruction: string, label: string) {
+    if (!selection || !drafts.a) return;
+    setError(null);
+    setFragmentRefining(label);
+    const res = await fetch("/api/ai/cover-letter/refine-fragment", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        applicationId,
+        fragment: selection.text,
+        instruction,
+        fullDraft: drafts.a.text,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error || "Fragment refine failed");
+      setFragmentRefining(null);
+      return;
+    }
+    const { rewritten } = await res.json();
+    const newText =
+      drafts.a.text.slice(0, selection.start) +
+      rewritten +
+      drafts.a.text.slice(selection.end);
+    setDrafts((d) => ({
+      ...d,
+      a: { ...(d.a ?? { text: "" }), text: newText },
+    }));
+    setDirty(newText !== existing?.content);
+    setSelection(null);
+    setCustomFragmentInstruction("");
+    setFragmentRefining(null);
+  }
+
+  const busy = generating || !!refining || !!fragmentRefining;
 
   return (
     <div className="space-y-10">
@@ -365,24 +443,99 @@ export function CoverLetterTab({
               </div>
             </div>
 
-            <textarea
-              ref={draftRef}
-              value={current?.text ?? ""}
-              onChange={(e) => {
-                if (activeDraft !== "a") return;
-                setDrafts((d) => ({
-                  ...d,
-                  a: { ...(d.a ?? { text: "" }), text: e.target.value },
-                }));
-                setDirty(e.target.value !== existing?.content);
-              }}
-              readOnly={activeDraft === "b" || busy}
-              className={`w-full min-h-[540px] py-8 font-serif text-[16px] leading-[1.8] bg-transparent border-0 focus:outline-none resize-y ${
-                busy && current?.text?.length ? "stream-caret" : ""
-              }`}
-              spellCheck
-              placeholder="Your cover letter will appear here…"
-            />
+            <div className="relative">
+              <textarea
+                ref={draftRef}
+                value={current?.text ?? ""}
+                onChange={(e) => {
+                  if (activeDraft !== "a") return;
+                  setDrafts((d) => ({
+                    ...d,
+                    a: { ...(d.a ?? { text: "" }), text: e.target.value },
+                  }));
+                  setDirty(e.target.value !== existing?.content);
+                  setSelection(null);
+                }}
+                onSelect={handleSelect}
+                onBlur={() => setTimeout(() => setSelection(null), 200)}
+                onScroll={() => setSelection(null)}
+                readOnly={activeDraft === "b" || busy}
+                className={`w-full min-h-[540px] py-8 font-serif text-[16px] leading-[1.8] bg-transparent border-0 focus:outline-none resize-y ${
+                  busy && current?.text?.length ? "stream-caret" : ""
+                }`}
+                spellCheck
+                placeholder="Your cover letter will appear here…"
+              />
+
+              {selection && activeDraft === "a" && !busy && !dirty && (
+                <div
+                  className="absolute z-20 -translate-x-1/2 animate-fade-in"
+                  style={{
+                    top: 12,
+                    left: "50%",
+                  }}
+                >
+                  <div className="flex items-center gap-1 px-1.5 py-1 bg-ink text-paper rounded-lg shadow-cardHover text-xs">
+                    <span className="px-2 text-neutral-400 border-r border-neutral-700">
+                      {selection.text.split(/\s+/).length}w selected
+                    </span>
+                    {FRAGMENT_CHIPS.map((chip) => (
+                      <button
+                        key={chip.label}
+                        onClick={() => refineFragment(chip.instruction, chip.label)}
+                        disabled={!!fragmentRefining}
+                        className="px-2.5 py-1 rounded hover:bg-neutral-800 disabled:opacity-40 transition-colors"
+                      >
+                        {fragmentRefining === chip.label ? "…" : chip.label}
+                      </button>
+                    ))}
+                    <div className="flex items-center border-l border-neutral-700 pl-1 ml-1">
+                      <input
+                        type="text"
+                        value={customFragmentInstruction}
+                        onChange={(e) =>
+                          setCustomFragmentInstruction(e.target.value)
+                        }
+                        placeholder="Custom…"
+                        className="w-32 bg-transparent text-paper placeholder-neutral-500 px-2 py-1 focus:outline-none"
+                        disabled={!!fragmentRefining}
+                        onKeyDown={(e) => {
+                          if (
+                            e.key === "Enter" &&
+                            customFragmentInstruction.trim() &&
+                            !fragmentRefining
+                          ) {
+                            refineFragment(
+                              customFragmentInstruction.trim(),
+                              "custom"
+                            );
+                          }
+                        }}
+                      />
+                      {customFragmentInstruction.trim() && (
+                        <button
+                          onClick={() =>
+                            refineFragment(
+                              customFragmentInstruction.trim(),
+                              "custom"
+                            )
+                          }
+                          disabled={!!fragmentRefining}
+                          className="px-2 py-1 hover:bg-neutral-800 rounded transition-colors"
+                        >
+                          {fragmentRefining === "custom" ? "…" : "→"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {fragmentRefining && (
+                    <div className="mt-1 text-center text-xs text-neutral-500 animate-fade-in">
+                      Refining selection…
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {current?.alternateOpening && !busy && (
               <div className="border-t border-neutral-200 pt-6 pb-2">
